@@ -1,12 +1,18 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/qweviluxx/GopherScanner.git/internal"
 )
+
+type ScanResponse struct {
+	Hostname string `json:"hostname"`
+	Ports    []int  `json:"ports"`
+}
 
 func validation(w http.ResponseWriter, h string, s, e int) bool {
 
@@ -27,7 +33,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	params := r.URL.Query()
+
 	hostname := params.Get("hostname")
+
 	startPort, err := strconv.Atoi(params.Get("startport"))
 	if err != nil {
 		http.Error(w, "Parsing param error:", http.StatusBadRequest)
@@ -46,8 +54,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ports := scanner.ScanRange(hostname, startPort, endPort)
-	fmt.Fprintf(w, "opened ports:%v", ports)
 
+	response := &ScanResponse{Hostname: hostname, Ports: ports}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, "JSON encode error", http.StatusInternalServerError)
+		return
+	}
 }
 
 func main() {
