@@ -1,0 +1,16 @@
+/cmd/server/server
+/cmd/main
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+/vendor/
+
+.env
+
+.idea/
+.vscode/
+*.swp
+*.out
