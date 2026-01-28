@@ -20,7 +20,7 @@ func validation(w http.ResponseWriter, h string, s, e int) bool {
 	return true
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func handler(w http.ResponseWriter, r *http.Request, repo repository.Repository) {
 	scanner := internal.NewScanner("tcp")
 
 	if r.Method != http.MethodGet {
@@ -51,6 +51,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	ports := scanner.ScanRange(ctx, hostname, startPort, endPort)
+	repo.SaveDB(ports, hostname)
 
 	response := &repository.ScanResponse{Hostname: hostname, Ports: ports}
 	w.Header().Set("Content-Type", "application/json")
@@ -62,14 +63,35 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func historyHandler(w http.ResponseWriter, r *http.Request, repo repository.Repository) {
+	data, err := repo.Receiver()
+	if err != nil {
+		http.Error(w, "Failed to get history", 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Write([]byte(data))
+}
+
 func main() {
-	http.HandleFunc("/scan", handler)
+
+	repo, err := repository.New("./scanner.db")
+	if err != nil {
+		fmt.Println("Failed to connect to DB:", err)
+		return
+	}
+
+	http.HandleFunc("/scan", func(w http.ResponseWriter, r *http.Request) { handler(w, r, repo) })
+	http.HandleFunc("/history", func(w http.ResponseWriter, r *http.Request) { historyHandler(w, r, repo) })
 
 	fmt.Println("Starting web-server on port 8080...")
-	err := http.ListenAndServe(":8080", nil)
+	err = http.ListenAndServe(":8080", nil)
 
 	if err != nil {
 		fmt.Println("Starting server error:", err)
 		return
 	}
+
 }

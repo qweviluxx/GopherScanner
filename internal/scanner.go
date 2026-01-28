@@ -28,7 +28,7 @@ func (s *Scanner) ScanPort(ctx context.Context, hostname string, port int) (bool
 	childCtx, cancel := context.WithTimeout(ctx, s.timeout)
 
 	conn, err := d.DialContext(childCtx, s.Protocol, address)
-	cancel()
+	defer cancel()
 
 	if err != nil {
 		return false, err
