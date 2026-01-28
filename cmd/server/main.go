@@ -7,12 +7,8 @@ import (
 	"strconv"
 
 	"github.com/qweviluxx/GopherScanner.git/internal"
+	"github.com/qweviluxx/GopherScanner.git/internal/repository"
 )
-
-type ScanResponse struct {
-	Hostname string `json:"hostname"`
-	Ports    []int  `json:"ports"`
-}
 
 func validation(w http.ResponseWriter, h string, s, e int) bool {
 
@@ -56,7 +52,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	ports := scanner.ScanRange(ctx, hostname, startPort, endPort)
 
-	response := &ScanResponse{Hostname: hostname, Ports: ports}
+	response := &repository.ScanResponse{Hostname: hostname, Ports: ports}
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	err = json.NewEncoder(w).Encode(response)
